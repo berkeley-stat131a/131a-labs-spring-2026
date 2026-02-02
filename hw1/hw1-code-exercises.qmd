@@ -1,8 +1,9 @@
 ---
 title: "R Notebook"
+format: "html"
 ---
 
-# STAT 131A, Spring 2026: Homework 1 Coding Questions
+# STAT C131A, Spring 2026: Homework 1 Coding Questions
 
 ## Question 1
 
