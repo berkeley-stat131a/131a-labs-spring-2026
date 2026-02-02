@@ -2,7 +2,7 @@
 title: "R Notebook"
 ---
 
-# STAT 131A, Fall 2024: Homework 1 Coding Questions
+# STAT 131A, Spring 2026: Homework 1 Coding Questions
 
 ## Question 1
 
