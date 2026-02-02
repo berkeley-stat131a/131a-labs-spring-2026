@@ -1,19 +1,19 @@
 ---
 title: "Working with PDFs and PMFs in R"
-output: html_notebook
+format: "html"
 ---
 
 # Working with PDFs and PMFs in `R`
 
 <img src="img/paranormal.jpg" width="200"/>\
 
-**Due Date**: Wednesday September 18th at midnight
+**Due Date**: Thursday February 12th at 11:59PM
 
 Labs are submitted via Gradescope.
 
--   You will submit (1) a .Rmd file with your code and (2) a PDF of your code and output.
--   To generate a PDF of your code and output, **do not knit to PDF**. Instead, knit your .Rmd file as HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Knit` and then `Knit to HTML`.
--   The knitting process will not work if there are errors in your code, so be sure to leave plenty of time to knit your lab notebooks before the deadline.
+-   You will submit (1) a .qmd file with your code and (2) a PDF of your code and output.
+-   To generate a PDF of your code and output, **do not render to PDF**. Instead, knit your .qmd file as HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Render`.
+-   The rendering process will not work if there are errors in your code, so be sure to leave plenty of time to render your lab notebooks before the deadline.
 
 # ✅ Set up
 
