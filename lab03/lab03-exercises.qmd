@@ -9,16 +9,16 @@ output:
 
 <img src="img/sampling.jpeg" width="400"/>\
 
-**Due Date**: Monday September 23rd at midnight.
+**Due Date**: Sunday, February 22nd at midnight.
 
 -   **Your Lab 3 submission must also included a completed PDF of the Lecture 8 worksheet.** We recommend that you complete the worksheet before attempting the lab.
 -   You can ignore the two normal distribution plots at the very end of the worksheet.
 
 Labs are submitted via Gradescope.
 
--   You will submit (1) a .Rmd file with your code, (2) a PDF of your code and output, and (3) a PDF of your completed Lecture 8 worksheet.
--   To generate a PDF of your code and output, **do not knit to PDF**. Instead, knit your .Rmd file as HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Knit` and then `Knit to HTML`.
--   The knitting process will not work if there are errors in your code, so be sure to leave plenty of time to knit your lab notebooks before the deadline.
+-   You will submit (1) a .qmd file with your code, (2) a PDF of your code and output, and (3) a PDF of your completed Lecture 8 worksheet.
+-   To generate a PDF of your code and output, **do not render to PDF**. Instead, render your .qmd file as HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Render`.
+-   The rendering process will not work if there are errors in your code, so be sure to leave plenty of time to render your lab notebooks before the deadline.
 
 # ✅ Set up
 
