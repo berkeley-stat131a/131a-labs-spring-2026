@@ -13,7 +13,7 @@ editor_options:
 <img src="img/null_hypothesis.png" width="200"/> <img src="img/p_values.png" width="200"/>\
 *Image credits: xkcd*
 
-**Due Date**: Wednesday March 9th 11:59PM PDT.
+**Due Date**: Monday March 9th 11:59PM PDT.
 
 Labs are submitted via Gradescope.
 
