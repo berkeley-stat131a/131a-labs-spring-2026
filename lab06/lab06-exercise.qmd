@@ -1,0 +1,729 @@
+---
+title: "Scammy pins and power!"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: helper-functions
+#| code-fold: true
+#| code-summary: "Show helper functions"
+
+# function for difference of proportions
+plot_diff_prop_dist <- function(n1, n2, p1, p2,
+                                hyp = "the null hypothesis",
+                                lower_cut = NULL,
+                                upper_cut = NULL,
+                                obs_T = NULL,
+                                two_tailed = FALSE,
+                                show_tails = TRUE,
+                                mode = c("pvalue", "power"),
+                                lwd = 2,
+                                tail_col = NULL,
+                                body_col = "black",
+                                pch = 19,
+                                add = FALSE,
+                                xlim = NULL,
+                                ylim = NULL,
+                                tol_snap = 1e-8) {
+  
+  mode <- match.arg(mode)
+  
+  if (is.null(tail_col)) {
+    tail_col <- if (mode == "power") "blue" else "red"
+  }
+  
+  # exact distribution
+  x1 <- 0:n1
+  x2 <- 0:n2
+  
+  prob1 <- dbinom(x1, size = n1, prob = p1)
+  prob2 <- dbinom(x2, size = n2, prob = p2)
+  
+  grid <- expand.grid(x1 = x1, x2 = x2)
+  grid$Tval <- round(grid$x2 / n2 - grid$x1 / n1, 12)
+  grid$prob <- prob1[grid$x1 + 1] * prob2[grid$x2 + 1]
+  
+  dist_df <- aggregate(prob ~ Tval, data = grid, sum)
+  dist_df <- dist_df[order(dist_df$Tval), ]
+  
+  Tvals <- dist_df$Tval
+  probs <- dist_df$prob
+  
+  lower_tail <- rep(FALSE, length(Tvals))
+  upper_tail <- rep(FALSE, length(Tvals))
+  
+  if (mode == "pvalue") {
+    
+    if (two_tailed) {
+      if (is.null(obs_T)) {
+        stop("If two_tailed = TRUE, you must provide obs_T.")
+      }
+      
+      j_obs <- which.min(abs(Tvals - obs_T))
+      if (abs(Tvals[j_obs] - obs_T) > tol_snap) {
+        stop("obs_T is not close enough to an attainable value.")
+      }
+      obs_T <- Tvals[j_obs]
+      
+      center <- p2 - p1
+      
+      if (obs_T <= center) {
+        lower_tail <- Tvals <= obs_T
+        lower_prob <- sum(probs[lower_tail])
+        
+        cum_prob <- 0
+        for (i in length(Tvals):1) {
+          if (Tvals[i] > center && cum_prob + probs[i] <= lower_prob + tol_snap) {
+            upper_tail[i] <- TRUE
+            cum_prob <- cum_prob + probs[i]
+          }
+        }
+        upper_prob <- sum(probs[upper_tail])
+      } else {
+        upper_tail <- Tvals >= obs_T
+        upper_prob <- sum(probs[upper_tail])
+        
+        cum_prob <- 0
+        for (i in seq_along(Tvals)) {
+          if (Tvals[i] < center && cum_prob + probs[i] <= upper_prob + tol_snap) {
+            lower_tail[i] <- TRUE
+            cum_prob <- cum_prob + probs[i]
+          }
+        }
+        lower_prob <- sum(probs[lower_tail])
+      }
+      
+      total_tail <- lower_prob + upper_prob
+      
+      main_title <- bquote(
+        atop(
+          "Exact sampling distribution of " ~
+            T["(n"[1]*","*n[2]*")"] == hat(p)[2]["(n"[2]*")"] - hat(p)[1]["(n"[1]*")"],
+          "under " ~ .(hyp) ~ "," ~
+            p[1] == .(p1) ~ "," ~ p[2] == .(p2) ~ "," ~
+            n[1] == .(n1) ~ "," ~ n[2] == .(n2)
+        )
+      )
+      
+      sub_title <- bquote(
+        "Observed =" ~ .(obs_T) ~ "," ~
+        "left tail =" ~ .(round(lower_prob, 4)) ~ "," ~
+        "right tail =" ~ .(round(upper_prob, 4)) ~ "," ~
+        "two-sided p-value =" ~ .(round(total_tail, 4))
+      )
+      
+    } else {
+      if (!is.null(lower_cut)) lower_tail <- Tvals <= lower_cut
+      if (!is.null(upper_cut)) upper_tail <- Tvals >= upper_cut
+      
+      lower_prob <- sum(probs[lower_tail])
+      upper_prob <- sum(probs[upper_tail])
+      total_tail <- lower_prob + upper_prob
+      
+      main_title <- bquote(
+        atop(
+          "Exact sampling distribution of " ~
+            T["(n"[1]*","*n[2]*")"] == hat(p)[2]["(n"[2]*")"] - hat(p)[1]["(n"[1]*")"],
+          "under " ~ .(hyp) ~ "," ~
+            p[1] == .(p1) ~ "," ~ p[2] == .(p2) ~ "," ~
+            n[1] == .(n1) ~ "," ~ n[2] == .(n2)
+        )
+      )
+      
+      sub_title <- NULL
+      if (!is.null(lower_cut) || !is.null(upper_cut)) {
+        sub_title <- bquote(
+          "Lower tail =" ~ .(round(lower_prob, 4)) ~ "," ~
+          "Upper tail =" ~ .(round(upper_prob, 4)) ~ "," ~
+          "Total p-value =" ~ .(round(total_tail, 4))
+        )
+      }
+    }
+  }
+  
+  if (mode == "power") {
+    if (is.null(lower_cut) && is.null(upper_cut)) {
+      stop("In power mode, provide at least one of lower_cut or upper_cut.")
+    }
+    
+    if (!is.null(lower_cut)) lower_tail <- Tvals <= lower_cut
+    if (!is.null(upper_cut)) upper_tail <- Tvals >= upper_cut
+    
+    lower_prob <- sum(probs[lower_tail])
+    upper_prob <- sum(probs[upper_tail])
+    total_tail <- lower_prob + upper_prob
+    
+    main_title <- bquote(
+      atop(
+        "Exact sampling distribution of " ~
+          T["(n"[1]*","*n[2]*")"] == hat(p)[2]["(n"[2]*")"] - hat(p)[1]["(n"[1]*")"],
+        "under the following alternative distribution," ~
+          p[1] == .(p1) ~ "," ~ p[2] == .(p2) ~ "," ~
+          n[1] == .(n1) ~ "," ~ n[2] == .(n2)
+      )
+    )
+    
+    sub_title <- bquote(
+      "Probability to reject null =" ~ .(round(total_tail, 4)) ~
+      "=" ~ "power with respect to" ~ .(hyp)
+    )
+  }
+  
+  tail_region <- lower_tail | upper_tail
+  cols <- if (show_tails) ifelse(tail_region, tail_col, body_col) else rep(body_col, length(Tvals))
+  
+if (is.null(xlim)) xlim <- range(Tvals)
+if (is.null(ylim)) ylim <- c(0, 1.1 * max(probs))
+
+plot(Tvals, probs,
+     type = "h",
+     lwd = lwd,
+     col = cols,
+     xlab = expression(hat(p)[2]["(n"[2]*")"] - hat(p)[1]["(n"[1]*")"]),
+     ylab = "Probability",
+     main = main_title,
+     sub = sub_title,
+     xlim = xlim,
+     ylim = ylim)
+
+points(Tvals, probs, col = cols, pch = pch)
+  
+  invisible(list(
+    Tvals = Tvals,
+    probs = probs,
+    lower_tail = lower_tail,
+    upper_tail = upper_tail,
+    total = total_tail
+  ))
+}
+```
+
+```{r}
+
+#| label: helper-functions
+#| code-fold: true
+#| code-summary: "Show helper functions"
+#| 
+plot_diff_prop_normal <- function(n1, n2, p1, p2,
+                                  hyp = "the null hypothesis",
+                                  lower_cut = NULL,
+                                  upper_cut = NULL,
+                                  obs_T = NULL,
+                                  two_tailed = FALSE,
+                                  show_tails = TRUE,
+                                  mode = c("pvalue", "power"),
+                                  lwd = 2,
+                                  tail_col = NULL,
+                                  body_col = "black",
+                                  ngrid = 2000,
+                                  add = FALSE,
+                                  xlim = NULL,
+                                  ylim = NULL) {
+  
+  mode <- match.arg(mode)
+  
+  if (is.null(tail_col)) {
+    if (mode == "pvalue") tail_col <- "red"
+    if (mode == "power")  tail_col <- "blue"
+  }
+  
+  mu <- p2 - p1
+  sigma <- sqrt(p1 * (1 - p1) / n1 + p2 * (1 - p2) / n2)
+  
+  if (sigma == 0) {
+    stop("The normal approximation is degenerate here because sigma = 0.")
+  }
+  
+  x_min <- mu - 4 * sigma
+  x_max <- mu + 4 * sigma
+  x <- seq(x_min, x_max, length.out = ngrid)
+  dens <- dnorm(x, mean = mu, sd = sigma)
+  
+  lower_prob <- 0
+  upper_prob <- 0
+  total_tail <- 0
+  
+  shade_left <- FALSE
+  shade_right <- FALSE
+  lower_bound <- NA
+  upper_bound <- NA
+  
+  if (mode == "pvalue") {
+    
+    if (two_tailed) {
+      if (is.null(obs_T)) {
+        stop("If two_tailed = TRUE, you must provide obs_T.")
+      }
+      
+      if (obs_T <= mu) {
+        lower_bound <- obs_T
+        lower_prob <- pnorm(obs_T, mean = mu, sd = sigma)
+        
+        # opposite-side cutoff chosen so right tail has same probability
+        upper_bound <- qnorm(1 - lower_prob, mean = mu, sd = sigma)
+        upper_prob <- 1 - pnorm(upper_bound, mean = mu, sd = sigma)
+      } else {
+        upper_bound <- obs_T
+        upper_prob <- 1 - pnorm(obs_T, mean = mu, sd = sigma)
+        
+        # opposite-side cutoff chosen so left tail has same probability
+        lower_bound <- qnorm(upper_prob, mean = mu, sd = sigma)
+        lower_prob <- pnorm(lower_bound, mean = mu, sd = sigma)
+      }
+      
+      total_tail <- lower_prob + upper_prob
+      shade_left <- TRUE
+      shade_right <- TRUE
+      
+      main_title <- bquote(
+        atop(
+          "Normal approximation to sampling distribution of " ~
+            T["(n"[1]*","*n[2]*")"] == hat(p)[2]["(n"[2]*")"] - hat(p)[1]["(n"[1]*")"],
+          "under " ~ .(hyp) ~ "," ~
+            p[1] == .(p1) ~ "," ~ p[2] == .(p2) ~ "," ~
+            n[1] == .(n1) ~ "," ~ n[2] == .(n2)
+        )
+      )
+      
+      sub_title <- bquote(
+        "Observed " ~ T["(n"[1]*","*n[2]*")"] == .(round(obs_T, 4)) ~ "," ~
+        "left tail =" ~ .(round(lower_prob, 4)) ~ "," ~
+        "right tail =" ~ .(round(upper_prob, 4)) ~ "," ~
+        "two-sided p-value =" ~ .(round(total_tail, 4))
+      )
+      
+    } else {
+      if (!is.null(lower_cut)) {
+        lower_bound <- lower_cut
+        lower_prob <- pnorm(lower_cut, mean = mu, sd = sigma)
+        shade_left <- TRUE
+      }
+      if (!is.null(upper_cut)) {
+        upper_bound <- upper_cut
+        upper_prob <- 1 - pnorm(upper_cut, mean = mu, sd = sigma)
+        shade_right <- TRUE
+      }
+      
+      total_tail <- lower_prob + upper_prob
+      
+      main_title <- bquote(
+        atop(
+          "Normal approximation to sampling distribution of " ~
+            T["(n"[1]*","*n[2]*")"] == hat(p)[2]["(n"[2]*")"] - hat(p)[1]["(n"[1]*")"],
+          "under " ~ .(hyp) ~ "," ~
+            p[1] == .(p1) ~ "," ~ p[2] == .(p2) ~ "," ~
+            n[1] == .(n1) ~ "," ~ n[2] == .(n2)
+        )
+      )
+      
+      sub_title <- NULL
+      if (!is.null(lower_cut) || !is.null(upper_cut)) {
+        sub_title <- bquote(
+          "Lower tail =" ~ .(round(lower_prob, 4)) ~ "," ~
+          "Upper tail =" ~ .(round(upper_prob, 4)) ~ "," ~
+          "Total p-value =" ~ .(round(total_tail, 4))
+        )
+      }
+    }
+  }
+  
+  if (mode == "power") {
+    if (is.null(lower_cut) && is.null(upper_cut)) {
+      stop("In power mode, provide at least one of lower_cut or upper_cut.")
+    }
+    
+    if (!is.null(lower_cut)) {
+      lower_bound <- lower_cut
+      lower_prob <- pnorm(lower_cut, mean = mu, sd = sigma)
+      shade_left <- TRUE
+    }
+    if (!is.null(upper_cut)) {
+      upper_bound <- upper_cut
+      upper_prob <- 1 - pnorm(upper_cut, mean = mu, sd = sigma)
+      shade_right <- TRUE
+    }
+    
+    total_tail <- lower_prob + upper_prob
+    
+    main_title <- bquote(
+      atop(
+        "Normal approximation to sampling distribution of " ~
+          T["(n"[1]*","*n[2]*")"] == hat(p)[2]["(n"[2]*")"] - hat(p)[1]["(n"[1]*")"],
+        "under the following alternative distribution," ~
+          p[1] == .(p1) ~ "," ~ p[2] == .(p2) ~ "," ~
+          n[1] == .(n1) ~ "," ~ n[2] == .(n2)
+      )
+    )
+    
+    sub_title <- bquote(
+      "Probability to reject null =" ~ .(round(total_tail, 4)) ~
+      "=" ~ "power with respect to" ~ .(hyp)
+    )
+  }
+  
+  plot(x, dens,
+       type = "l",
+       lwd = lwd,
+       col = body_col,
+       xlab = expression(hat(p)[2]["(n"[2]*")"] - hat(p)[1]["(n"[1]*")"]),
+       ylab = "Density",
+       main = main_title,
+       sub = sub_title)
+  
+  if (show_tails && shade_left) {
+    x_left <- x[x <= lower_bound]
+    y_left <- dnorm(x_left, mean = mu, sd = sigma)
+    polygon(c(min(x_left), x_left, max(x_left)),
+            c(0, y_left, 0),
+            col = tail_col,
+            border = NA)
+  }
+  
+  if (show_tails && shade_right) {
+    x_right <- x[x >= upper_bound]
+    y_right <- dnorm(x_right, mean = mu, sd = sigma)
+    polygon(c(min(x_right), x_right, max(x_right)),
+            c(0, y_right, 0),
+            col = tail_col,
+            border = NA)
+  }
+  
+  lines(x, dens, lwd = lwd, col = body_col)
+  
+  invisible(list(
+    x = x,
+    density = dens,
+    mu = mu,
+    sigma = sigma,
+    lower_cut = lower_bound,
+    upper_cut = upper_bound,
+    lower_prob = lower_prob,
+    upper_prob = upper_prob,
+    total = total_tail
+  ))
+}
+```
+
+For the following use the functions provided and solve the problem graphically.
+
+Context: remember that checking if a pin is scammy is a very expensive operation. That's why we hire human reviewer and we sample for them with replacement several pins and they tell us if they are scammy (blue side of the cube).
+
+## Q1: Did our scammy pins go down from last month to this month?
+
+-   Pick the appropriate null hypothesis (negate what you're trying to prove).
+-   Take $n_1 = n_2 = 10$ samples from the bags and check whether it disproves the null hypothesis $p_2>p_1$. Andrea or Van will give you numbers here.
+-   Go tell your PM what you found. (summarize your findings)
+
+## Q2: Projections
+
+-   If it doesn't, how many more $n$'s are needed to finally reject the null, if we assume that the trend from the samples continues? (I.e. same k/n ratios)
+-   Now go tell your PM about it... (summarize your findings)
+
+## Q3: We have some idea about $p_1$ and $p_2$. Your PM wants to know how many draws to budget for.
+
+-   Assume we suspect the truth is that $p_1 = 0.25$, and $p_2 = 0.15$.
+-   Start from a certain value of n (e.g. 20)
+-   Find the rejection area of null Hypothesis $p_2 > p_1$
+    -   find worst case scenario $p_1$ and $p_2$ (hardest $H_0$ to disprove)
+    -   find the smallest $k_1$ and/or largest $k_2$ that will still result in a rejection (smallest delta) at alpha level. That's the rejection area.
+-   Calculate the probability of rejection under our suspected true scenario $p_1 = 0.3$, and $p_2 = 0.2$ (the power)
+-   Go back to the beginning, do this again and adjust n until you reach power = 80%.
+-   Now go tell your PM (summarize your findings)
+
+## Q4: Do the same with the normal approximation.
+
+## Q5: Optimal allocation of draws
+
+-   Fix a total $n = n_1 + n_2 = 100$
+-   Try different combinations of $n_1, n_2$. For each of them find the rejection area and then calculate the power. Mark down all these values that you find.
+-   Which combination gave you the highest power?
+-   It might be easier to do this with the normal approximation but the exact solution has more insights in it I believe.
+
+## \[bonus\] Q6: Saving a little
+
+-   We are sampling with replacement, therefore we risk drawing the same pin twice.
+-   Can you think of a way to save a little on the human reviews?
+-   On average, how much do you expect to save with that trick?
+
+```{r}
+multiplicative_factor = 10
+n_1 = 50#10*multiplicative_factor
+n_2 = 50#10*multiplicative_factor
+k_1 = 13#0.5*multiplicative_factor
+k_2 = 5#0.*multiplicative_factor
+
+p_1_worst = (k_1+k_2)/(n_1+n_2)
+p_2_worst = p_1_worst
+
+To = k_2/n_2 - k_1/n_1
+
+
+h0 <- plot_diff_prop_dist(
+  n1 = n_1, n2 = n_2,
+  p1 = p_1_worst, p2 = p_2_worst,
+  hyp = "the null hypothesis",
+  obs_T = To,
+  two_tailed = TRUE,
+  mode = "pvalue"
+)
+
+```
+
+```{r}
+p1_true_h1 = 0.25
+p2_true_h1 = 0.15
+
+k_1_rej_alpha = k_1
+k_2_rej_alpha = k_2
+
+T_rej_alpha = k_2_rej_alpha/n_2 - k_1_rej_alpha/n_1
+
+
+
+h1 <- plot_diff_prop_dist(
+  n1 = n_1, n2 = n_2,
+  p1 = p1_true_h1, p2 = p2_true_h1,
+  hyp = "the alternative hypothesis",
+  lower_cut = T_rej_alpha,
+  upper_cut = 2,
+  mode = "power"
+)
+
+```
+
+```{r}
+plot_diff_prop_normal(
+  n1 = n_1, n2 = n_2,
+  p1 = p_1_worst, p2 = p_2_worst,
+  hyp = "the null hypothesis",
+  obs_T = To,
+  two_tailed = TRUE,
+  mode = "pvalue"
+)
+```
+
+```{r}
+plot_diff_prop_normal(
+  n1 = n_1, n2 = n_2,
+  p1 = p1_true_h1, p2 = p2_true_h1,
+  hyp = "the alternative hypothesis",
+  lower_cut = T_rej_alpha,
+  upper_cut = 2,
+  mode = "power"
+)
+```
+
+```{r}
+
+#| label: helper-functions
+#| code-fold: true
+#| code-summary: "Show helper functions"
+#| 
+# functions for proportions
+plot_sample_prop_dist <- function(n, p,
+                                  hyp = "the null hypothesis",
+                                  lower_cut = NULL,
+                                  upper_cut = NULL,
+                                  obs_T = NULL,
+                                  two_tailed = FALSE,
+                                  show_tails = TRUE,
+                                  mode = c("pvalue", "power"),
+                                  lwd = 2,
+                                  tail_col = NULL,
+                                  body_col = "black",
+                                  pch = 19) {
+  
+  mode <- match.arg(mode)
+  
+  if (is.null(tail_col)) {
+    if (mode == "pvalue") tail_col <- "red"
+    if (mode == "power")  tail_col <- "blue"
+  }
+  
+  k <- 0:n
+  phat <- k / n
+  probs <- dbinom(k, size = n, prob = p)
+  
+  lower_tail <- rep(FALSE, length(phat))
+  upper_tail <- rep(FALSE, length(phat))
+  
+  if (mode == "pvalue") {
+    
+    # ----- automatic two-tailed mode -----
+    if (two_tailed) {
+      if (is.null(obs_T)) {
+        stop("If two_tailed = TRUE, you must provide obs_T.")
+      }
+      if (!(obs_T %in% phat)) {
+        stop("obs_T must be one of the possible values 0, 1/n, 2/n, ..., 1.")
+      }
+      
+      # null center
+      center <- p
+      
+      # observed value index
+      obs_idx <- which(phat == obs_T)
+      
+      if (obs_T <= center) {
+        # observed statistic is on the left
+        lower_tail <- phat <= obs_T
+        lower_prob <- sum(probs[lower_tail])
+        
+        # on the opposite side, include the most extreme right values
+        # whose total probability is <= lower_prob
+        cum_prob <- 0
+        upper_tail <- rep(FALSE, length(phat))
+        for (i in seq_along(phat)[length(phat):1]) {
+          if (phat[i] > center && cum_prob + probs[i] <= lower_prob + 1e-15) {
+            upper_tail[i] <- TRUE
+            cum_prob <- cum_prob + probs[i]
+          }
+        }
+        upper_prob <- sum(probs[upper_tail])
+      } else {
+        # observed statistic is on the right
+        upper_tail <- phat >= obs_T
+        upper_prob <- sum(probs[upper_tail])
+        
+        # on the opposite side, include the most extreme left values
+        # whose total probability is <= upper_prob
+        cum_prob <- 0
+        lower_tail <- rep(FALSE, length(phat))
+        for (i in seq_along(phat)) {
+          if (phat[i] < center && cum_prob + probs[i] <= upper_prob + 1e-15) {
+            lower_tail[i] <- TRUE
+            cum_prob <- cum_prob + probs[i]
+          }
+        }
+        lower_prob <- sum(probs[lower_tail])
+      }
+      
+      tail_region <- lower_tail | upper_tail
+      total_tail <- lower_prob + upper_prob
+      
+      main_title <- bquote(
+        atop(
+          "Exact sampling distribution of " ~ T["(n)"] == hat(p)["(n)"],
+          "under " ~ .(hyp) ~ "," ~ p == .(p) ~ "," ~ n == .(n)
+        )
+      )
+      
+      sub_title <- bquote(
+        "Observed " ~ T["(n)"] == .(obs_T) ~ "," ~
+        "left tail =" ~ .(round(lower_prob, 4)) ~ "," ~
+        "right tail =" ~ .(round(upper_prob, 4)) ~ "," ~
+        "two-sided p-value =" ~ .(round(total_tail, 4))
+      )
+      
+    } else {
+      # ----- ordinary manual-tail mode -----
+      if (!is.null(lower_cut)) {
+        lower_tail <- phat <= lower_cut
+      }
+      if (!is.null(upper_cut)) {
+        upper_tail <- phat >= upper_cut
+      }
+      
+      tail_region <- lower_tail | upper_tail
+      
+      lower_prob <- sum(probs[lower_tail])
+      upper_prob <- sum(probs[upper_tail])
+      total_tail <- lower_prob + upper_prob
+      
+      main_title <- bquote(
+        atop(
+          "Exact sampling distribution of " ~ T["(n)"] == hat(p)["(n)"],
+          "under " ~ .(hyp) ~ "," ~ p == .(p) ~ "," ~ n == .(n)
+        )
+      )
+      
+      sub_title <- NULL
+      if (!is.null(lower_cut) || !is.null(upper_cut)) {
+        sub_title <- bquote(
+          "Lower tail =" ~ .(round(lower_prob, 4)) ~
+          "," ~ "Upper tail =" ~ .(round(upper_prob, 4)) ~
+          "," ~ "Total p-value =" ~ .(round(total_tail, 4))
+        )
+      }
+    }
+  }
+  
+  if (mode == "power") {
+    if (is.null(lower_cut)) {
+      stop("In power mode, please provide lower_cut.")
+    }
+    
+    lower_tail <- phat <= lower_cut
+    tail_region <- lower_tail
+    
+    power_val <- sum(probs[lower_tail])
+    
+    main_title <- bquote(
+      atop(
+        "Exact sampling distribution of " ~ T["(n)"] == hat(p)["(n)"],
+        "under the following alternative distribution," ~ p == .(p) ~ "," ~ n == .(n)
+      )
+    )
+    
+    sub_title <- bquote(
+      "Probability to reject null =" ~ .(round(power_val, 4)) ~
+      "=" ~ "power with respect to" ~ .(hyp)
+    )
+    
+    lower_prob <- power_val
+    upper_prob <- 0
+    total_tail <- power_val
+  }
+  
+  cols <- if (show_tails) {
+    ifelse(tail_region, tail_col, body_col)
+  } else {
+    rep(body_col, length(phat))
+  }
+  
+  plot(phat, probs,
+       type = "h",
+       lwd = lwd,
+       col = cols,
+       xlab = expression(hat(p)["(n)"]),
+       ylab = "Probability",
+       main = main_title,
+       sub = sub_title,
+       ylim = c(0, max(probs) * 1.1))
+  
+  points(phat, probs,
+         col = cols,
+         pch = pch)
+  
+  invisible(list(
+    phat = phat,
+    probs = probs,
+    lower_tail = lower_tail,
+    upper_tail = upper_tail,
+    rejection_region = tail_region,
+    lower_prob = lower_prob,
+    upper_prob = upper_prob,
+    total = total_tail
+  ))
+}
+```
+
+```{r}
+plot_h0 <- plot_sample_prop_dist(
+  n = 50,
+  p = 0.2,
+  hyp = "the null hypothesis",
+  obs_T = 4/50,
+  two_tailed = TRUE,
+  mode = "pvalue"
+)
+
+plot_h1 <- plot_sample_prop_dist(
+  n = 50,
+  p = 0.15,
+  hyp = "this alternative hypothesis",
+  lower_cut = 4/50,
+  mode = "power"
+)
+```
