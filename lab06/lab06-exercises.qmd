@@ -1,9 +1,29 @@
 ---
 title: "Scammy pins and power!"
-format: html
-editor: visual
+output:
+  html_document:
+    df_print: paged
+editor_options: 
+  markdown: 
+    wrap: sentence
 ---
 
+# 🪙 Lab 6: Double-proportion exact tests and power calculations with `R`
+
+<img src="img/null_hypothesis.png" width="200"/> <img src="img/p_values.png" width="200"/>\
+*Image credits: xkcd*
+
+**Due Date**: Thursday March 19th 11:59PM PDT.
+
+Labs are submitted via Gradescope.
+
+-   You will submit (1) a .qmd file with your code, (2) a PDF of your code and output.
+-   To generate a PDF of your code and output, **do not render to PDF**. Instead, render your .qmd file as HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Render`.
+-   The renderting process will not work if there are errors in your code, so be sure to leave plenty of time to render your lab notebooks before the deadline.
+
+# ✅ Set up
+
+The helper function cells below contain all the code you'll need. See below for examples of how to use them.
 ```{r}
 #| label: helper-functions
 #| code-fold: true
@@ -407,7 +427,8 @@ plot_diff_prop_normal <- function(n1, n2, p1, p2,
 
 For the following use the functions provided and solve the problem graphically.
 
-Context: remember that checking if a pin is scammy is a very expensive operation. That's why we hire human reviewer and we sample for them with replacement several pins and they tell us if they are scammy (blue side of the cube).
+Context: remember that checking if a pin is scammy is a very expensive operation.
+That's why we hire human reviewer and we sample for them with replacement several pins and they tell us if they are scammy (blue side of the cube).
 
 ## Q1: Did our scammy pins go down from last month to this month?
 
