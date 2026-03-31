@@ -12,13 +12,13 @@ editor_options:
 
 <img src="img/cars.jpeg" alt="“cars”" width="500"/>\
 
-**Due Date**: Monday, October 28th at midnight.
+**Due Date**: Sunday, April 5th at 11:59pm.
 
 Labs are submitted via Gradescope.
 
--   You will submit (1) a .Rmd file with your code, (2) a PDF of your code and output.
--   To generate a PDF of your code and output, **do not knit to PDF**. Instead, knit your .Rmd file as HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Knit` and then `Knit to HTML`.
--   The knitting process will not work if there are errors in your code, so be sure to leave plenty of time to knit your lab notebooks before the deadline.
+-   You will submit a PDF of your code and output.
+-   To generate a PDF of your code and output, you can render to PDF or render to HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Render`.
+-   The rendering process will not work if there are errors in your code, so be sure to leave plenty of time to render your lab notebooks before the deadline.
 
 ## ✅ Setup and data import
 
