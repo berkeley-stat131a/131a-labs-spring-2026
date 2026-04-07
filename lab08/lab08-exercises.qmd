@@ -11,15 +11,14 @@ editor_options:
 
 <img src="img/cars.jpeg" alt="“cars”" width="500"/>\
 
-**Due Date**: Friday, November 8th at midnight.
+**Due Date**: Sunday, April 12nd at 11:59PM.
 
-**Note:** HW4 includes material covered in this lab. HW4 is due Monday 11/4. So, aim to finish this lab by Friday 11/1.
 
 Labs are submitted via Gradescope.
 
--   You will submit (1) a .Rmd file with your code, (2) a PDF of your code and output.
--   To generate a PDF of your code and output, **do not knit to PDF**. Instead, knit your .Rmd file as HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Knit` and then `Knit to HTML`.
--   The knitting process will not work if there are errors in your code, so be sure to leave plenty of time to knit your lab notebooks before the deadline.
+-   You will submit a PDF of your code and output.
+-   To generate a PDF of your code and output, you can render to PDF or render to HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Render`.
+-   The rendering process will not work if there are errors in your code, so be sure to leave plenty of time to render your lab notebooks before the deadline.
 
 ## ✅ Setup and data import
 
@@ -28,6 +27,8 @@ In this lab, we will explore underfitting, overfitting, and cross-validation wit
 -   **Previous goal from Lab 7:** Predict the price of a used car using its features (e.g., color).
 
 -   **Goal of Lab 8:** Build a model that makes accurate predictions on data that was not used to train the model.
+
+-   **N.B.** In class we use MSPE (RMSPE): "(root) mean square *prediction* error", but in this lab we'll drop the "p", as most literature does.
 
 ```{r}
 # Load in additional functions
