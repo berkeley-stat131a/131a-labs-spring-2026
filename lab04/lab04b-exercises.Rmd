@@ -14,13 +14,11 @@ editor_options:
 
 <img src="img/confidence_interval_xkcd.png" alt="“bootstrap-cartoon”" width="200"/>\
 
-**Due Date**: Friday October 4th at midnight.
-
--   **Your Lab 4 submission (Parts A and B) must also included a completed PDF of the Lecture 9 worksheet.** We recommend that you complete the worksheet before attempting the lab.
+**Due Date**: Monday March 2nd at midnight.
 
 Labs are submitted via Gradescope.
 
--   You will submit (1) the two .Rmd files with your code from parts A and B, (2) the two PDFs of your code and output from parts A and B, and (3) a PDF of your completed Lecture 9 worksheet.
+-   You will submit (1) the two .Rmd files with your code from parts A and B, (2) the two PDFs of your code and output from parts A and B
 -   To generate a PDF of your code and output, **do not knit to PDF**. Instead, knit your .Rmd file as HTML, open the HTML file in a web browser, and then **print the HTML as a PDF, making sure that none of your code or output is cut off.** You can generate an HTML file in RStudio by pressing `Knit` and then `Knit to HTML`.
 -   The knitting process will not work if there are errors in your code, so be sure to leave plenty of time to knit your lab notebooks before the deadline.
 
